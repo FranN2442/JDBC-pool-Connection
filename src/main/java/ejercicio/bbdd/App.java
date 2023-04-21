@@ -15,14 +15,27 @@ public class App
 {
 
     private static HikariDataSource dataSource;
-    public static void main( String[] args )
+    public static void main( String[] args ) throws SQLException
     {
+
+        try{
+
+            initDatabaseConnectionPool();
+            createData("fran", 33);
+
+        } finally {
+
+            closeDatabaseConnectionPool(); 
+
+        }
         
     }
 
     private static void initDatabaseConnectionPool() {
-        HikariConfig hikariConfig = new HikariConfig("/database.properties");
-        dataSource = new HikariDataSource(hikariConfig);;
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:mariadb://localhost:3306/jdbc_demo");
+        dataSource.setUsername("root");
+        dataSource.setPassword("20Fran04.");
     }
 
     private static void closeDatabaseConnectionPool() {
@@ -30,6 +43,8 @@ public class App
     }
 
     private static void createData(String nombre, int numero) throws SQLException {
+        System.out.println("Creating Data...");
+        int rowsInserted;
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement("""
                         INSERT INTO tipos(nombre, numero)
@@ -37,9 +52,10 @@ public class App
                     """)) {
                 statement.setString(1, nombre);
                 statement.setInt(2, numero);
-                int rowsInserted = statement.executeUpdate();
-                System.out.println("Rows inserted: " + rowsInserted);
+                rowsInserted = statement.executeUpdate();
             }
+
         }
+        System.out.println("Rows inserted: " + rowsInserted);
     }
 }
