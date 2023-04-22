@@ -2,6 +2,7 @@ package ejercicio.bbdd;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.zaxxer.hikari.HikariConfig;
@@ -21,7 +22,13 @@ public class App
         try{
 
             initDatabaseConnectionPool();
-            createData("fran", 33);
+            createData("Java", 2);
+            createData("Python", 4);
+            readData();
+            updateData("Java", 9);
+            readData();
+            deleteData("Python");
+            readData();
 
         } finally {
 
@@ -57,5 +64,60 @@ public class App
 
         }
         System.out.println("Rows inserted: " + rowsInserted);
+    }
+
+    private static void readData() throws SQLException {
+        System.out.println("Reading data...");
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                        SELECT nombre, numero
+                        FROM tipos
+                        ORDER BY numero DESC
+                    """)) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    boolean empty = true;
+                    while (resultSet.next()) {
+                        empty = false;
+                        String nombre = resultSet.getString("nombre");
+                        int numero = resultSet.getInt("numero");
+                        System.out.println("\t> " + nombre + ": " + numero);
+                    }
+                    if (empty) {
+                        System.out.println("\t (no data)");
+                    }
+                }
+            }
+        }
+    }
+    
+
+    private static void updateData(String nombre, int numero) throws SQLException {
+        System.out.print("Updating data...");
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                        UPDATE tipos
+                        SET numero = ?
+                        WHERE nombre = ?
+                    """)) {
+                statement.setInt(1, numero);
+                statement.setString(2, nombre);
+                int rowsUpdated = statement.executeUpdate();
+                System.out.println("\nRows updated: " + rowsUpdated);
+            }
+        }
+    }
+
+    private static void deleteData(String nombre) throws SQLException {
+        System.out.print("Deleting data...");
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                        DELETE FROM tipos
+                        WHERE nombre LIKE ?
+                    """)) {
+                statement.setString(1, nombre);
+                int rowsDeleted = statement.executeUpdate();
+                System.out.println("Rows deleted: " + rowsDeleted);
+            }
+        }
     }
 }
